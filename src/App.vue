@@ -1,23 +1,14 @@
 <template>
   <div id="app">
     <!-- Loading Screen -->
-    <div
+    <LoadingComponent
       v-if="isInitializing"
-      class="fixed inset-0 bg-white flex items-center justify-center z-50"
-    >
-      <div class="text-center">
-        <div class="w-16 h-16 mx-auto mb-4 relative">
-          <div class="w-16 h-16 border-4 border-primary-200 rounded-full"></div>
-          <div
-            class="w-16 h-16 border-4 border-primary-600 rounded-full border-t-transparent animate-spin absolute top-0 left-0"
-          ></div>
-        </div>
-        <div class="text-lg font-semibold text-neutral-700 mb-2">
-          Loading Dashboard
-        </div>
-        <div class="text-sm text-neutral-500">Memuat sistem inventaris...</div>
-      </div>
-    </div>
+      variant="page"
+      title="Loading Dashboard"
+      message="Memuat sistem inventaris UPA TIK..."
+      :show-progress="true"
+      :progress="loadingProgress"
+    />
 
     <!-- Main App Content -->
     <div v-else>
@@ -29,79 +20,152 @@
       <!-- Halaman tanpa layout (login, dll) -->
       <router-view v-else />
     </div>
+
+    <!-- Notification Container -->
+    <NotificationContainer />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import NavbarLayout from "./components/layouts/NavbarLayout.vue";
-import { useAuth } from "./composables/useAuth";
+import NavbarLayout from "@/components/layouts/NavbarLayout.vue";
+import LoadingComponent from "@/components/ui/LoadingComponent.vue";
+import { useAuth } from "@/composables/useAuth";
+import { useNotification } from "@/composables/useNotification";
+import NotificationContainer from "@/components/ui/NotificationContainer.vue";
 
 // Composables
 const route = useRoute();
 const router = useRouter();
-const { isAuthenticated, initializeAuth } = useAuth();
+const { isAuthenticated, isAdmin, initializeAuth } = useAuth();
+const { networkError } = useNotification();
 
 // State
 const isInitializing = ref(true);
+const loadingProgress = ref(0);
 
 // Computed
 const shouldShowLayout = computed(() => {
-  // Tampilkan layout untuk semua halaman kecuali login
-  const noLayoutRoutes = ["/login"];
-  return !noLayoutRoutes.includes(route.path) && isAuthenticated.value;
+  // Tampilkan layout hanya untuk admin yang sudah login
+  const noLayoutRoutes = ["/login", "/unauthorized"];
+  return (
+    !noLayoutRoutes.includes(route.path) &&
+    isAuthenticated.value &&
+    isAdmin.value
+  );
 });
 
 // Methods
 const initializeApp = async () => {
   try {
+    // Simulate progressive loading for better UX
+    loadingProgress.value = 10;
+
     // Initialize Firebase Auth
+    loadingProgress.value = 30;
     await initializeAuth();
+
+    loadingProgress.value = 60;
 
     // Setup router guards
     setupRouterGuards();
 
-    // Simulate loading time untuk UX yang lebih baik
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    loadingProgress.value = 80;
+
+    // Setup global error handlers
+    setupErrorHandlers();
+
+    loadingProgress.value = 95;
+
+    // Small delay for smooth transition
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    loadingProgress.value = 100;
   } catch (error) {
     console.error("App initialization error:", error);
+    networkError();
   } finally {
-    isInitializing.value = false;
+    // Delay to show 100% progress
+    setTimeout(() => {
+      isInitializing.value = false;
+    }, 200);
   }
 };
 
 const setupRouterGuards = () => {
   router.beforeEach(async (to, _from, next) => {
     // Routes yang tidak memerlukan authentication
-    const publicRoutes = ["/login"];
+    const publicRoutes = ["/login", "/unauthorized"];
 
     if (publicRoutes.includes(to.path)) {
-      // Jika sudah login dan mencoba akses halaman public, redirect ke dashboard
-      if (isAuthenticated.value) {
+      // Jika sudah login dan admin, redirect ke dashboard
+      if (isAuthenticated.value && isAdmin.value) {
         next("/");
       } else {
         next();
       }
     } else {
-      // Routes yang memerlukan authentication
-      if (isAuthenticated.value) {
-        next();
-      } else {
-        // Redirect ke login jika belum login
+      // Routes yang memerlukan authentication dan role admin
+      if (!isAuthenticated.value) {
+        // Belum login, redirect ke login
         next("/login");
+      } else if (!isAdmin.value) {
+        // Login tapi bukan admin, redirect ke unauthorized
+        next("/unauthorized");
+      } else {
+        // Admin yang valid
+        next();
       }
     }
+  });
+
+  // Handle route errors
+  router.onError((error) => {
+    console.error("Router error:", error);
+    networkError();
+  });
+};
+
+const setupErrorHandlers = () => {
+  // Global error handler untuk unhandled promises
+  window.addEventListener("unhandledrejection", (event) => {
+    console.error("Unhandled promise rejection:", event.reason);
+
+    // Check if it's a network error
+    if (
+      event.reason?.code === "auth/network-request-failed" ||
+      event.reason?.message?.includes("network") ||
+      event.reason?.message?.includes("fetch")
+    ) {
+      networkError();
+    }
+  });
+
+  // Global error handler untuk JavaScript errors
+  window.addEventListener("error", (event) => {
+    console.error("Global error:", event.error);
   });
 };
 
 // Watch for auth state changes
-watch(isAuthenticated, (newVal, oldVal) => {
-  if (oldVal === true && newVal === false) {
-    // User logged out
-    router.push("/login");
+watch(
+  [isAuthenticated, isAdmin],
+  ([newAuth, newAdmin], [oldAuth, oldAdmin]) => {
+    if (oldAuth === true && newAuth === false) {
+      // User logged out
+      router.push("/login");
+    } else if (newAuth === true && oldAuth === false) {
+      // User just logged in, check admin status
+      if (!newAdmin) {
+        router.push("/unauthorized");
+      }
+    } else if (newAuth === true && oldAdmin === true && newAdmin === false) {
+      // User role changed from admin to non-admin
+      router.push("/unauthorized");
+    }
   }
-});
+);
 
 // Lifecycle
 onMounted(() => {
@@ -110,7 +174,7 @@ onMounted(() => {
 </script>
 
 <style>
-/* Global styles bisa ditambahkan di sini */
+/* Global styles */
 #app {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -150,5 +214,16 @@ onMounted(() => {
   .no-print {
     display: none !important;
   }
+}
+
+/* Route transition */
+.router-transition-enter-active,
+.router-transition-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.router-transition-enter-from,
+.router-transition-leave-to {
+  opacity: 0;
 }
 </style>

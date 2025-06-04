@@ -10,7 +10,9 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "module": "es2020",
     "moduleResolution": "Bundler",
-    "types": ["unplugin-vue-router/client"]
+    "types": ["unplugin-vue-router/client"],
+    "composite": true
   }
 }

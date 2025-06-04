@@ -13,7 +13,7 @@ const firebaseConfig = {
 
 export const firebaseApp = initializeApp(firebaseConfig);
 
-const db = getFirestore(firebaseApp);
+export const db = getFirestore(firebaseApp);
 
 // Export references to the Firestore
 export const usersRef = collection(db, "users");
