@@ -187,14 +187,20 @@ class FirestoreService {
       return {
         peminjaman: {
           total: peminjaman.length,
-          pending: peminjaman.filter(
-            (item) => item.statusPeminjaman === "pending"
+          diajukan: peminjaman.filter(
+            (item) => item.statusPeminjaman === "diajukan"
           ).length,
-          approved: peminjaman.filter(
-            (item) => item.statusPeminjaman === "approved"
+          disetujui: peminjaman.filter(
+            (item) => item.statusPeminjaman === "disetujui"
           ).length,
-          rejected: peminjaman.filter(
-            (item) => item.statusPeminjaman === "rejected"
+          diambil: peminjaman.filter(
+            (item) => item.statusPeminjaman === "diambil"
+          ).length,
+          ditolak: peminjaman.filter(
+            (item) => item.statusPeminjaman === "ditolak"
+          ).length,
+          selesai: peminjaman.filter(
+            (item) => item.statusPeminjaman === "selesai"
           ).length,
         },
         pengaduan: {
@@ -275,16 +281,32 @@ class FirestoreService {
   getStatusColor(status: string): string {
     switch (status?.toLowerCase()) {
       case "pending":
+      case "diajukan":
         return "bg-warning-100 text-warning-800";
       case "approved":
-      case "resolved":
-      case "completed":
-        return "bg-success-100 text-success-800";
-      case "rejected":
-      case "cancelled":
-        return "bg-error-100 text-error-800";
-      case "in-progress":
+      case "disetujui":
         return "bg-blue-100 text-blue-800";
+      case "diambil":
+        return "bg-indigo-100 text-indigo-800";
+      case "rejected":
+      case "ditolak":
+        return "bg-error-100 text-error-800";
+      case "completed":
+      case "resolved":
+      case "selesai":
+        return "bg-success-100 text-success-800";
+      case "in-progress":
+        return "bg-purple-100 text-purple-800";
+      case "scheduled":
+        return "bg-cyan-100 text-cyan-800";
+      case "diagnosed":
+        return "bg-orange-100 text-orange-800";
+      case "in-repair":
+        return "bg-red-100 text-red-800";
+      case "assigned":
+        return "bg-teal-100 text-teal-800";
+      case "cancelled":
+        return "bg-neutral-100 text-neutral-800";
       default:
         return "bg-neutral-100 text-neutral-800";
     }
@@ -295,18 +317,40 @@ class FirestoreService {
     switch (status?.toLowerCase()) {
       case "pending":
         return "Menunggu";
+      case "diajukan":
+        return "Diajukan";
       case "approved":
         return "Disetujui";
+      case "disetujui":
+        return "Disetujui";
+      case "diambil":
+        return "Diambil";
       case "rejected":
         return "Ditolak";
+      case "ditolak":
+        return "Ditolak";
+      case "completed":
+        return "Selesai";
       case "resolved":
         return "Selesai";
-      case "completed":
+      case "selesai":
         return "Selesai";
       case "in-progress":
         return "Sedang Proses";
+      case "scheduled":
+        return "Terjadwal";
+      case "diagnosed":
+        return "Didiagnosa";
+      case "in-repair":
+        return "Sedang Diperbaiki";
+      case "assigned":
+        return "Ditugaskan";
       case "cancelled":
         return "Dibatalkan";
+      case "irreparable":
+        return "Tidak Dapat Diperbaiki";
+      case "closed":
+        return "Ditutup";
       default:
         return status || "Tidak Diketahui";
     }
