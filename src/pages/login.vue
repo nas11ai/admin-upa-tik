@@ -142,20 +142,6 @@
         <p class="text-xs text-neutral-500">
           © 2025 UPA TIK. Sistem Inventaris Barang Elektronik.
         </p>
-        <div
-          class="mt-2 flex items-center justify-center space-x-4 text-xs text-neutral-400"
-        >
-          <button
-            @click="toggleDemoInfo"
-            class="hover:text-neutral-600 transition-colors"
-          >
-            {{ showDemoInfo ? "Sembunyikan" : "Info Demo" }}
-          </button>
-          <span>•</span>
-          <a href="#" class="hover:text-neutral-600 transition-colors"
-            >Bantuan</a
-          >
-        </div>
       </div>
     </div>
   </div>
@@ -205,10 +191,6 @@ const handleGoogleLogin = async () => {
   } catch (err) {
     console.error("Google login error:", err);
   }
-};
-
-const toggleDemoInfo = () => {
-  showDemoInfo.value = !showDemoInfo.value;
 };
 
 // Watch for authentication changes
