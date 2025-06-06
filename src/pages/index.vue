@@ -1,43 +1,49 @@
 <template>
   <div class="space-y-6">
-    <!-- Welcome Header -->
-    <div
-      class="bg-linear-to-r from-primary-500 to-secondary-500 rounded-2xl p-6 text-white"
-    >
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold mb-2">
-            Selamat datang, {{ userDisplayName }}! 👋
-          </h1>
-          <p class="text-primary-100 mb-4">
-            Kelola inventaris barang elektronik UPA TIK dengan mudah dan efisien
-          </p>
-          <div class="flex items-center text-sm text-primary-100">
-            <Calendar class="h-4 w-4 mr-2" />
-            {{ currentDate }}
-          </div>
-        </div>
-        <div class="hidden md:block">
-          <div
-            class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center"
-          >
-            <Package class="h-12 w-12 text-white" />
-          </div>
-        </div>
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-dashboard-text">
+          Dashboard Admin UPA TIK
+        </h1>
+        <p class="text-dashboard-text-light mt-1">
+          Selamat datang, {{ userDisplayName }}! Kelola semua pengajuan dan
+          permintaan layanan.
+        </p>
       </div>
+      <button
+        @click="refreshData"
+        :disabled="loading"
+        class="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+      >
+        <RotateCcw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
+        Refresh
+      </button>
     </div>
 
-    <!-- Quick Stats Cards -->
+    <!-- Stats Overview -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div
-        v-for="stat in quickStats"
+        v-for="stat in statsCards"
         :key="stat.title"
-        class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover transition-shadow cursor-pointer group"
-        @click="navigateTo(stat.link)"
+        class="bg-white rounded-xl p-6 shadow-card border border-dashboard-border hover:shadow-card-hover transition-shadow"
       >
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-dashboard-text-light">{{ stat.title }}</p>
+            <p class="text-2xl font-bold text-dashboard-text">
+              {{ stat.total }}
+            </p>
+            <div class="flex items-center mt-2 space-x-2">
+              <span
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-100 text-warning-800"
+              >
+                {{ stat.pending }} menunggu
+              </span>
+            </div>
+          </div>
           <div
-            class="flex items-center justify-center w-12 h-12 rounded-lg"
+            class="w-12 h-12 rounded-lg flex items-center justify-center"
             :class="stat.iconBg"
           >
             <component
@@ -46,218 +52,181 @@
               :class="stat.iconColor"
             />
           </div>
-          <div class="text-right">
-            <div
-              class="text-2xl font-bold text-neutral-900 group-hover:text-primary-600 transition-colors"
-            >
-              {{ stat.value }}
-            </div>
-            <div class="text-sm text-neutral-500">{{ stat.label }}</div>
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-neutral-700">
-            {{ stat.title }}
-          </h3>
-          <div class="flex items-center text-sm" :class="stat.trend.color">
-            <component :is="stat.trend.icon" class="h-4 w-4 mr-1" />
-            {{ stat.trend.value }}
-          </div>
         </div>
       </div>
     </div>
 
-    <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Recent Activities -->
-      <div class="lg:col-span-2 bg-white rounded-xl shadow-card p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-semibold text-neutral-900">
-            Aktivitas Terkini
-          </h2>
-          <button
-            class="text-primary-600 hover:text-primary-800 text-sm font-medium"
-          >
-            Lihat Semua
-          </button>
-        </div>
-
-        <div class="space-y-4">
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <router-link
+        v-for="service in services"
+        :key="service.name"
+        :to="service.path"
+        class="bg-white rounded-xl p-6 shadow-card border border-dashboard-border hover:shadow-card-hover transition-all group"
+      >
+        <div class="flex items-center justify-between mb-4">
           <div
-            v-for="activity in recentActivities"
-            :key="activity.id"
-            class="flex items-start space-x-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors"
+            class="w-12 h-12 rounded-lg flex items-center justify-center"
+            :class="service.iconBg"
           >
-            <div
-              class="flex items-center justify-center w-8 h-8 rounded-full"
-              :class="activity.iconBg"
-            >
-              <component
-                :is="activity.icon"
-                class="h-4 w-4"
-                :class="activity.iconColor"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm text-neutral-900">
-                <span class="font-medium">{{ activity.user }}</span>
-                {{ activity.action }}
-                <span class="font-medium text-primary-600">{{
-                  activity.item
-                }}</span>
-              </p>
-              <div class="flex items-center mt-1 text-xs text-neutral-500">
-                <Clock class="h-3 w-3 mr-1" />
-                {{ activity.time }}
-              </div>
-            </div>
-            <div class="flex-shrink-0">
-              <span
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                :class="activity.statusColor"
-              >
-                {{ activity.status }}
-              </span>
-            </div>
+            <component
+              :is="service.icon"
+              class="h-6 w-6"
+              :class="service.iconColor"
+            />
           </div>
-        </div>
-      </div>
-
-      <!-- Quick Actions & Notifications -->
-      <div class="space-y-6">
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-xl shadow-card p-6">
-          <h3 class="text-lg font-semibold text-neutral-900 mb-4">
-            Aksi Cepat
-          </h3>
-          <div class="space-y-3">
-            <button
-              v-for="action in quickActions"
-              :key="action.title"
-              @click="navigateTo(action.link)"
-              class="w-full flex items-center p-3 rounded-lg border border-neutral-200 hover:border-primary-300 hover:bg-primary-50 transition-colors group"
-            >
-              <component
-                :is="action.icon"
-                class="h-5 w-5 text-neutral-600 group-hover:text-primary-600 mr-3"
-              />
-              <span
-                class="text-sm font-medium text-neutral-700 group-hover:text-primary-700"
-              >
-                {{ action.title }}
-              </span>
-              <ChevronRight
-                class="h-4 w-4 text-neutral-400 group-hover:text-primary-600 ml-auto"
-              />
-            </button>
-          </div>
+          <span
+            v-if="service.count > 0"
+            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-error-100 text-error-800"
+          >
+            {{ service.count }}
+          </span>
         </div>
 
-        <!-- Notifications -->
-        <div class="bg-white rounded-xl shadow-card p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-neutral-900">Notifikasi</h3>
-            <span
-              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-error-100 text-error-800"
-            >
-              {{ notifications.length }} Baru
-            </span>
-          </div>
-          <div class="space-y-3">
-            <div
-              v-for="notification in notifications"
-              :key="notification.id"
-              class="flex items-start space-x-3 p-3 rounded-lg"
-              :class="notification.bgColor"
-            >
-              <component
-                :is="notification.icon"
-                class="h-4 w-4 mt-0.5"
-                :class="notification.iconColor"
-              />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium" :class="notification.textColor">
-                  {{ notification.title }}
-                </p>
-                <p class="text-xs mt-1" :class="notification.subtextColor">
-                  {{ notification.message }}
-                </p>
-              </div>
-            </div>
-          </div>
+        <h3
+          class="text-lg font-semibold text-dashboard-text group-hover:text-primary-600 transition-colors"
+        >
+          {{ service.name }}
+        </h3>
+
+        <div
+          class="flex items-center mt-4 text-primary-600 group-hover:text-primary-700"
+        >
+          <span class="text-sm font-medium">Lihat semua</span>
+          <ChevronRight
+            class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform"
+          />
         </div>
-      </div>
+      </router-link>
     </div>
 
-    <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Inventory Status Chart -->
-      <div class="bg-white rounded-xl shadow-card p-6">
-        <h3 class="text-lg font-semibold text-neutral-900 mb-4">
-          Status Inventaris
+    <!-- Recent Submissions -->
+    <div class="bg-white rounded-xl shadow-card border border-dashboard-border">
+      <div class="px-6 py-4 border-b border-dashboard-border">
+        <h3 class="text-lg font-semibold text-dashboard-text">
+          Pengajuan Terbaru
         </h3>
-        <div class="space-y-4">
-          <div
-            v-for="status in inventoryStatus"
-            :key="status.label"
-            class="flex items-center justify-between"
-          >
-            <div class="flex items-center space-x-3">
-              <div class="w-3 h-3 rounded-full" :class="status.color"></div>
-              <span class="text-sm text-neutral-700">{{ status.label }}</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <span class="text-sm font-medium text-neutral-900">{{
-                status.count
-              }}</span>
-              <div class="w-20 bg-neutral-200 rounded-full h-2">
-                <div
-                  class="h-2 rounded-full transition-all duration-300"
-                  :class="status.color"
-                  :style="{ width: status.percentage + '%' }"
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Recent Maintenance -->
-      <div class="bg-white rounded-xl shadow-card p-6">
-        <h3 class="text-lg font-semibold text-neutral-900 mb-4">
-          Maintenance Mendatang
-        </h3>
-        <div class="space-y-4">
-          <div
-            v-for="maintenance in upcomingMaintenance"
-            :key="maintenance.id"
-            class="flex items-center justify-between p-3 rounded-lg border border-neutral-200"
-          >
-            <div class="flex items-center space-x-3">
+      <div class="divide-y divide-neutral-200">
+        <div
+          v-for="item in recentSubmissions"
+          :key="`${item.type}-${item.id}`"
+          class="p-6 hover:bg-neutral-50 transition-colors"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-start space-x-4">
               <div
-                class="flex items-center justify-center w-8 h-8 rounded-full bg-warning-100"
+                class="w-10 h-10 rounded-lg flex items-center justify-center"
+                :class="getServiceConfig(item.type).iconBg"
               >
-                <Wrench class="h-4 w-4 text-warning-600" />
+                <component
+                  :is="getServiceConfig(item.type).icon"
+                  class="h-5 w-5"
+                  :class="getServiceConfig(item.type).iconColor"
+                />
               </div>
-              <div>
-                <p class="text-sm font-medium text-neutral-900">
-                  {{ maintenance.item }}
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-medium text-dashboard-text truncate">
+                  {{ item.judul }}
+                </h4>
+                <p class="text-sm text-dashboard-text-light">
+                  {{ getServiceConfig(item.type).name }} • {{ item.userEmail }}
                 </p>
-                <p class="text-xs text-neutral-500">{{ maintenance.type }}</p>
+                <p class="text-xs text-dashboard-text-light mt-1">
+                  {{ formatDate(item.tanggalPengajuan) }}
+                </p>
               </div>
             </div>
-            <div class="text-right">
-              <p class="text-sm font-medium text-neutral-900">
-                {{ maintenance.date }}
-              </p>
+
+            <div class="flex items-center space-x-3">
               <span
                 class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                :class="maintenance.priorityColor"
+                :class="
+                  firestoreService.getStatusColor(
+                    item.status || item.statusPeminjaman
+                  )
+                "
               >
-                {{ maintenance.priority }}
+                {{
+                  firestoreService.getStatusLabel(
+                    item.status || item.statusPeminjaman
+                  )
+                }}
               </span>
+
+              <button
+                @click="
+                  updateStatus(
+                    item.type,
+                    item.id!,
+                    item.status || item.statusPeminjaman
+                  )
+                "
+                class="text-primary-600 hover:text-primary-800 text-sm font-medium"
+              >
+                Update
+              </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div v-if="recentSubmissions.length === 0" class="p-6 text-center">
+        <FileX class="mx-auto h-12 w-12 text-neutral-400" />
+        <h3 class="mt-2 text-sm font-medium text-neutral-900">
+          Tidak ada pengajuan
+        </h3>
+        <p class="mt-1 text-sm text-neutral-500">
+          Belum ada pengajuan yang masuk hari ini.
+        </p>
+      </div>
+    </div>
+
+    <!-- Status Update Modal -->
+    <div
+      v-if="showStatusModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click="closeStatusModal"
+    >
+      <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full" @click.stop>
+        <h3 class="text-lg font-semibold text-neutral-900 mb-4">
+          Update Status
+        </h3>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 mb-2">
+              Status Baru
+            </label>
+            <select
+              v-model="selectedStatus"
+              class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="pending">Menunggu</option>
+              <option value="approved">Disetujui</option>
+              <option value="rejected">Ditolak</option>
+              <option value="in-progress">Sedang Proses</option>
+              <option value="completed">Selesai</option>
+              <option value="resolved">Selesai</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 mt-6">
+          <button
+            @click="closeStatusModal"
+            class="px-4 py-2 border border-neutral-300 rounded-lg text-neutral-700 hover:bg-neutral-50 transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            @click="confirmUpdateStatus"
+            :disabled="updating"
+            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+          >
+            {{ updating ? "Memperbarui..." : "Update" }}
+          </button>
         </div>
       </div>
     </div>
@@ -266,272 +235,267 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
 import {
-  Package,
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  FileText,
-  BarChart3,
-  Clock,
+  RotateCcw,
   ChevronRight,
-  Plus,
-  Search,
-  Download,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
+  FileX,
+  Package,
+  MessageSquare,
   Wrench,
-  Package2,
-  Activity,
+  Plus,
+  Zap,
+  AlertTriangle,
+  HelpCircle,
 } from "lucide-vue-next";
 import { useAuth } from "../composables/useAuth";
-
-// Router
-const router = useRouter();
+import { useNotification } from "../composables/useNotification";
+import { firestoreService, type FormPeminjaman } from "../services/firestore";
 
 // Composables
 const { userDisplayInfo } = useAuth();
+const { success, error } = useNotification();
+
+// State
+const loading = ref(false);
+const stats = ref<any>({});
+const recentSubmissions = ref<any[]>([]);
+const showStatusModal = ref(false);
+const selectedStatus = ref("");
+const updating = ref(false);
+const currentItem = ref<{
+  type: string;
+  id: string;
+  currentStatus: string;
+} | null>(null);
+
+// Service configuration
+const serviceConfigs = {
+  form_peminjaman: {
+    name: "Peminjaman",
+    icon: Package,
+    iconColor: "text-blue-600",
+    iconBg: "bg-blue-100",
+    path: "/peminjaman",
+  },
+  form_pengaduan: {
+    name: "Pengaduan",
+    icon: MessageSquare,
+    iconColor: "text-red-600",
+    iconBg: "bg-red-100",
+    path: "/pengaduan",
+  },
+  form_pemeliharaan: {
+    name: "Pemeliharaan",
+    icon: Wrench,
+    iconColor: "text-green-600",
+    iconBg: "bg-green-100",
+    path: "/pemeliharaan",
+  },
+  form_pembuatan: {
+    name: "Pembuatan",
+    icon: Plus,
+    iconColor: "text-purple-600",
+    iconBg: "bg-purple-100",
+    path: "/pembuatan",
+  },
+  form_pemasangan: {
+    name: "Pemasangan",
+    icon: Zap,
+    iconColor: "text-yellow-600",
+    iconBg: "bg-yellow-100",
+    path: "/pemasangan",
+  },
+  form_lapor_kerusakan: {
+    name: "Lapor Kerusakan",
+    icon: AlertTriangle,
+    iconColor: "text-orange-600",
+    iconBg: "bg-orange-100",
+    path: "/lapor-kerusakan",
+  },
+  form_bantuan: {
+    name: "Bantuan",
+    icon: HelpCircle,
+    iconColor: "text-indigo-600",
+    iconBg: "bg-indigo-100",
+    path: "/bantuan",
+  },
+};
 
 // Computed
 const userDisplayName = computed(
   () => userDisplayInfo.value?.displayName || "Admin"
 );
 
-const currentDate = computed(() => {
-  return new Intl.DateTimeFormat("id-ID", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date());
-});
-
-// Data
-const quickStats = ref([
+const statsCards = computed(() => [
   {
-    title: "Total Barang",
-    value: "1,247",
-    label: "items",
-    icon: Package2,
-    iconColor: "text-primary-600",
-    iconBg: "bg-primary-100",
-    trend: {
-      value: "+12%",
-      icon: TrendingUp,
-      color: "text-success-600",
-    },
-    link: "/inventory",
-  },
-  {
-    title: "Sedang Digunakan",
-    value: "892",
-    label: "items",
-    icon: Users,
-    iconColor: "text-success-600",
-    iconBg: "bg-success-100",
-    trend: {
-      value: "+5%",
-      icon: TrendingUp,
-      color: "text-success-600",
-    },
-    link: "/usage",
-  },
-  {
-    title: "Perlu Maintenance",
-    value: "23",
-    label: "items",
-    icon: AlertTriangle,
-    iconColor: "text-warning-600",
-    iconBg: "bg-warning-100",
-    trend: {
-      value: "-8%",
-      icon: TrendingDown,
-      color: "text-success-600",
-    },
-    link: "/maintenance",
-  },
-  {
-    title: "Nilai Aset",
-    value: "2.4M",
-    label: "IDR",
-    icon: BarChart3,
-    iconColor: "text-secondary-600",
-    iconBg: "bg-secondary-100",
-    trend: {
-      value: "+18%",
-      icon: TrendingUp,
-      color: "text-success-600",
-    },
-    link: "/analytics",
-  },
-]);
-
-const recentActivities = ref([
-  {
-    id: 1,
-    user: "John Doe",
-    action: "menambahkan",
-    item: "Laptop Dell XPS 13",
-    time: "2 jam yang lalu",
-    status: "Selesai",
-    statusColor: "bg-success-100 text-success-800",
-    icon: Plus,
-    iconColor: "text-success-600",
-    iconBg: "bg-success-100",
-  },
-  {
-    id: 2,
-    user: "Jane Smith",
-    action: "memperbarui status",
-    item: "Printer HP LaserJet",
-    time: "4 jam yang lalu",
-    status: "Proses",
-    statusColor: "bg-warning-100 text-warning-800",
-    icon: Activity,
-    iconColor: "text-warning-600",
-    iconBg: "bg-warning-100",
-  },
-  {
-    id: 3,
-    user: "Admin",
-    action: "menghapus",
-    item: "Mouse Lama",
-    time: "6 jam yang lalu",
-    status: "Selesai",
-    statusColor: "bg-error-100 text-error-800",
-    icon: XCircle,
-    iconColor: "text-error-600",
-    iconBg: "bg-error-100",
-  },
-  {
-    id: 4,
-    user: "Tech Support",
-    action: "maintenance",
-    item: "Server Utama",
-    time: "1 hari yang lalu",
-    status: "Selesai",
-    statusColor: "bg-success-100 text-success-800",
-    icon: Wrench,
-    iconColor: "text-primary-600",
-    iconBg: "bg-primary-100",
-  },
-]);
-
-const quickActions = ref([
-  {
-    title: "Tambah Barang Baru",
-    icon: Plus,
-    link: "/inventory/add",
-  },
-  {
-    title: "Cari Inventaris",
-    icon: Search,
-    link: "/inventory",
-  },
-  {
-    title: "Generate Laporan",
-    icon: FileText,
-    link: "/reports",
-  },
-  {
-    title: "Export Data",
-    icon: Download,
-    link: "/export",
-  },
-]);
-
-const notifications = ref([
-  {
-    id: 1,
-    title: "Maintenance Terjadwal",
-    message: "5 perangkat perlu maintenance minggu ini",
-    icon: AlertTriangle,
-    iconColor: "text-warning-600",
-    textColor: "text-warning-900",
-    subtextColor: "text-warning-700",
-    bgColor: "bg-warning-50",
-  },
-  {
-    id: 2,
-    title: "Stok Menipis",
-    message: "Toner printer akan habis dalam 3 hari",
+    title: "Peminjaman",
+    total: stats.value.peminjaman?.total || 0,
+    pending: stats.value.peminjaman?.pending || 0,
     icon: Package,
-    iconColor: "text-error-600",
-    textColor: "text-error-900",
-    subtextColor: "text-error-700",
-    bgColor: "bg-error-50",
+    iconColor: "text-blue-600",
+    iconBg: "bg-blue-100",
   },
   {
-    id: 3,
-    title: "Backup Berhasil",
-    message: "Data berhasil di-backup pada 00:00",
-    icon: CheckCircle,
-    iconColor: "text-success-600",
-    textColor: "text-success-900",
-    subtextColor: "text-success-700",
-    bgColor: "bg-success-50",
+    title: "Pengaduan",
+    total: stats.value.pengaduan?.total || 0,
+    pending: stats.value.pengaduan?.pending || 0,
+    icon: MessageSquare,
+    iconColor: "text-red-600",
+    iconBg: "bg-red-100",
+  },
+  {
+    title: "Pemeliharaan",
+    total: stats.value.pemeliharaan?.total || 0,
+    pending: stats.value.pemeliharaan?.pending || 0,
+    icon: Wrench,
+    iconColor: "text-green-600",
+    iconBg: "bg-green-100",
+  },
+  {
+    title: "Lainnya",
+    total:
+      (stats.value.pembuatan?.total || 0) +
+      (stats.value.pemasangan?.total || 0) +
+      (stats.value.laporKerusakan?.total || 0) +
+      (stats.value.bantuan?.total || 0),
+    pending:
+      (stats.value.pembuatan?.pending || 0) +
+      (stats.value.pemasangan?.pending || 0) +
+      (stats.value.laporKerusakan?.pending || 0) +
+      (stats.value.bantuan?.pending || 0),
+    icon: HelpCircle,
+    iconColor: "text-neutral-600",
+    iconBg: "bg-neutral-100",
   },
 ]);
 
-const inventoryStatus = ref([
-  {
-    label: "Aktif Digunakan",
-    count: 892,
-    percentage: 71.5,
-    color: "bg-success-500",
-  },
-  {
-    label: "Tersedia",
-    count: 332,
-    percentage: 26.6,
-    color: "bg-primary-500",
-  },
-  {
-    label: "Maintenance",
-    count: 23,
-    percentage: 1.9,
-    color: "bg-warning-500",
-  },
-]);
-
-const upcomingMaintenance = ref([
-  {
-    id: 1,
-    item: "Server Database",
-    type: "Maintenance Rutin",
-    date: "15 Jan",
-    priority: "Tinggi",
-    priorityColor: "bg-error-100 text-error-800",
-  },
-  {
-    id: 2,
-    item: "AC Ruangan Server",
-    type: "Pengecekan Filter",
-    date: "18 Jan",
-    priority: "Sedang",
-    priorityColor: "bg-warning-100 text-warning-800",
-  },
-  {
-    id: 3,
-    item: "UPS Backup",
-    type: "Test Battery",
-    date: "22 Jan",
-    priority: "Rendah",
-    priorityColor: "bg-neutral-100 text-neutral-800",
-  },
-]);
+const services = computed(() =>
+  Object.entries(serviceConfigs).map(([key, config]) => ({
+    ...config,
+    count: stats.value[key.replace("form_", "")]?.pending || 0,
+  }))
+);
 
 // Methods
-const navigateTo = (path: string) => {
-  router.push(path);
+const getServiceConfig = (type: string) => {
+  return (
+    serviceConfigs[type as keyof typeof serviceConfigs] ||
+    serviceConfigs["form_bantuan"]
+  );
+};
+
+const formatDate = (date: any) => {
+  return firestoreService.formatDate(date);
+};
+
+type SubmissionWithTanggalPengajuan = FormPeminjaman & { type: string };
+
+function hasTanggalPengajuan(
+  submission: any
+): submission is SubmissionWithTanggalPengajuan {
+  return "tanggalPengajuan" in submission && !!submission.tanggalPengajuan;
+}
+
+const loadDashboardData = async () => {
+  try {
+    loading.value = true;
+
+    // Load stats
+    stats.value = await firestoreService.getDashboardStats();
+
+    // Load recent submissions (from all collections)
+    const [
+      peminjaman,
+      pengaduan,
+      pemeliharaan,
+      pembuatan,
+      pemasangan,
+      laporKerusakan,
+      bantuan,
+    ] = await Promise.all([
+      firestoreService.getPeminjaman(),
+      firestoreService.getPengaduan(),
+      firestoreService.getPemeliharaan(),
+      firestoreService.getPembuatan(),
+      firestoreService.getPemasangan(),
+      firestoreService.getLaporKerusakan(),
+      firestoreService.getBantuan(),
+    ]);
+
+    // Combine and sort by date
+    const allSubmissions = [
+      ...peminjaman.map((item) => ({ ...item, type: "form_peminjaman" })),
+      ...pengaduan.map((item) => ({ ...item, type: "form_pengaduan" })),
+      ...pemeliharaan.map((item) => ({ ...item, type: "form_pemeliharaan" })),
+      ...pembuatan.map((item) => ({ ...item, type: "form_pembuatan" })),
+      ...pemasangan.map((item) => ({ ...item, type: "form_pemasangan" })),
+      ...laporKerusakan.map((item) => ({
+        ...item,
+        type: "form_lapor_kerusakan",
+      })),
+      ...bantuan.map((item) => ({ ...item, type: "form_bantuan" })),
+    ];
+
+    // Sort by date and take latest 10
+    recentSubmissions.value = allSubmissions
+      .filter(hasTanggalPengajuan)
+      .sort((a, b) => {
+        const dateA =
+          a.tanggalPengajuan?.toDate?.() || new Date(a.tanggalPengajuan);
+        const dateB =
+          b.tanggalPengajuan?.toDate?.() || new Date(b.tanggalPengajuan);
+        return dateB.getTime() - dateA.getTime();
+      })
+      .slice(0, 10);
+  } catch (err) {
+    console.error("Error loading dashboard data:", err);
+    error("Gagal memuat data dashboard");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const refreshData = () => {
+  loadDashboardData();
+};
+
+const updateStatus = (type: string, id: string, currentStatus: string) => {
+  currentItem.value = { type, id, currentStatus };
+  selectedStatus.value = currentStatus;
+  showStatusModal.value = true;
+};
+
+const closeStatusModal = () => {
+  showStatusModal.value = false;
+  currentItem.value = null;
+  selectedStatus.value = "";
+};
+
+const confirmUpdateStatus = async () => {
+  if (!currentItem.value) return;
+
+  try {
+    updating.value = true;
+
+    await firestoreService.updateStatus(
+      currentItem.value.type,
+      currentItem.value.id,
+      selectedStatus.value
+    );
+
+    success("Status berhasil diperbarui");
+    closeStatusModal();
+    loadDashboardData(); // Refresh data
+  } catch (err) {
+    console.error("Error updating status:", err);
+    error("Gagal memperbarui status");
+  } finally {
+    updating.value = false;
+  }
 };
 
 // Lifecycle
 onMounted(() => {
-  // Load dashboard data
-  console.log("Dashboard loaded for:", userDisplayName.value);
+  loadDashboardData();
 });
 </script>
