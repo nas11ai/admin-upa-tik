@@ -98,26 +98,7 @@ const setupRouterGuards = () => {
     // Routes yang tidak memerlukan authentication
     const publicRoutes = ["/login", "/unauthorized"];
 
-    if (publicRoutes.includes(to.path)) {
-      // Jika sudah login dan admin, redirect ke dashboard
-      if (isAuthenticated.value && isAdmin.value) {
-        next("/");
-      } else {
-        next();
-      }
-    } else {
-      // Routes yang memerlukan authentication dan role admin
-      if (!isAuthenticated.value) {
-        // Belum login, redirect ke login
-        next("/login");
-      } else if (!isAdmin.value) {
-        // Login tapi bukan admin, redirect ke unauthorized
-        next("/unauthorized");
-      } else {
-        // Admin yang valid
-        next();
-      }
-    }
+    next("/");
   });
 
   // Handle route errors
@@ -155,14 +136,6 @@ watch(
     if (oldAuth === true && newAuth === false) {
       // User logged out
       router.push("/login");
-    } else if (newAuth === true && oldAuth === false) {
-      // User just logged in, check admin status
-      if (!newAdmin) {
-        router.push("/unauthorized");
-      }
-    } else if (newAuth === true && oldAdmin === true && newAdmin === false) {
-      // User role changed from admin to non-admin
-      router.push("/unauthorized");
     }
   }
 );
