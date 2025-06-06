@@ -19,7 +19,7 @@ export interface AuthState {
 export const useAuth = () => {
   const auth = getAuth();
   const user = useCurrentUser();
-  const { authSuccess, authError, roleError, updateSuccess, updateError } =
+  const { authSuccess, authError, roleError, updateSuccess } =
     useNotification();
 
   const authState = ref<AuthState>({
@@ -281,37 +281,6 @@ export const useAuth = () => {
     }
   });
 
-  // Manual role update (for admin panel)
-  const updateUserRole = async (
-    userId: string,
-    updates: Partial<Pick<UserRole, "role" | "department" | "permissions">>
-  ) => {
-    try {
-      if (!user.value || !isAdmin.value) {
-        throw new Error("Unauthorized: Only admins can update user roles");
-      }
-
-      await firebaseService.updateUserRole(userId, updates, user.value.uid);
-
-      updateSuccess("User berhasil diperbarui");
-      return { success: true };
-    } catch (error: any) {
-      console.error("Error updating user role:", error);
-      updateError("User", error.message);
-      return { success: false, error: error.message };
-    }
-  };
-
-  // Get user statistics
-  const getUserStats = async () => {
-    try {
-      return await firebaseService.getUserStats();
-    } catch (error) {
-      console.error("Error getting user stats:", error);
-      throw error;
-    }
-  };
-
   // Get audit logs
   const getAuditLogs = async (userId?: string, limit?: number) => {
     try {
@@ -339,8 +308,6 @@ export const useAuth = () => {
     hasRole,
     hasPermission,
     initializeAuth,
-    updateUserRole,
-    getUserStats,
     getAuditLogs,
 
     // Utils
