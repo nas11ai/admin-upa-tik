@@ -36,9 +36,16 @@
             </p>
             <div class="flex items-center mt-2 space-x-2">
               <span
+                v-if="stat.title === 'Peminjaman'"
                 class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-100 text-warning-800"
               >
-                {{ stat.pending }} menunggu
+                {{ stat.pending }} diajukan
+              </span>
+              <span
+                v-else
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+              >
+                {{ stat.pending }} terkirim
               </span>
             </div>
           </div>
@@ -330,7 +337,7 @@ const statsCards = computed(() => [
   {
     title: "Peminjaman",
     total: stats.value.peminjaman?.total || 0,
-    pending: stats.value.peminjaman?.pending || 0,
+    pending: stats.value.peminjaman?.diajukan || 0,
     icon: Package,
     iconColor: "text-blue-600",
     iconBg: "bg-blue-100",
@@ -338,7 +345,7 @@ const statsCards = computed(() => [
   {
     title: "Pengaduan",
     total: stats.value.pengaduan?.total || 0,
-    pending: stats.value.pengaduan?.pending || 0,
+    pending: stats.value.pengaduan?.terkirim || 0,
     icon: MessageSquare,
     iconColor: "text-red-600",
     iconBg: "bg-red-100",
@@ -346,7 +353,7 @@ const statsCards = computed(() => [
   {
     title: "Pemeliharaan",
     total: stats.value.pemeliharaan?.total || 0,
-    pending: stats.value.pemeliharaan?.pending || 0,
+    pending: stats.value.pemeliharaan?.terkirim || 0,
     icon: Wrench,
     iconColor: "text-green-600",
     iconBg: "bg-green-100",
@@ -359,10 +366,10 @@ const statsCards = computed(() => [
       (stats.value.laporKerusakan?.total || 0) +
       (stats.value.bantuan?.total || 0),
     pending:
-      (stats.value.pembuatan?.pending || 0) +
-      (stats.value.pemasangan?.pending || 0) +
-      (stats.value.laporKerusakan?.pending || 0) +
-      (stats.value.bantuan?.pending || 0),
+      (stats.value.pembuatan?.terkirim || 0) +
+      (stats.value.pemasangan?.terkirim || 0) +
+      (stats.value.laporKerusakan?.terkirim || 0) +
+      (stats.value.bantuan?.terkirim || 0),
     icon: HelpCircle,
     iconColor: "text-neutral-600",
     iconBg: "bg-neutral-100",
