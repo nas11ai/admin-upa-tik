@@ -205,37 +205,41 @@ class FirestoreService {
         },
         pengaduan: {
           total: pengaduan.length,
-          pending: pengaduan.filter((item) => item.status === "pending").length,
-          resolved: pengaduan.filter((item) => item.status === "resolved")
+          terkirim: pengaduan.filter((item) => item.status === "terkirim")
             .length,
+          selesai: pengaduan.filter((item) => item.status === "selesai").length,
         },
         pemeliharaan: {
           total: pemeliharaan.length,
-          pending: pemeliharaan.filter((item) => item.status === "pending")
+          terkirim: pemeliharaan.filter((item) => item.status === "terkirim")
             .length,
-          inProgress: pemeliharaan.filter(
-            (item) => item.status === "in-progress"
-          ).length,
-          completed: pemeliharaan.filter((item) => item.status === "completed")
+          selesai: pemeliharaan.filter((item) => item.status === "selesai")
             .length,
         },
         pembuatan: {
           total: pembuatan.length,
-          pending: pembuatan.filter((item) => item.status === "pending").length,
+          terkirim: pembuatan.filter((item) => item.status === "terkirim")
+            .length,
+          selesai: pembuatan.filter((item) => item.status === "selesai").length,
         },
         pemasangan: {
           total: pemasangan.length,
-          pending: pemasangan.filter((item) => item.status === "pending")
+          terkirim: pemasangan.filter((item) => item.status === "terkirim")
+            .length,
+          selesai: pemasangan.filter((item) => item.status === "selesai")
             .length,
         },
         laporKerusakan: {
           total: laporKerusakan.length,
-          pending: laporKerusakan.filter((item) => item.status === "pending")
+          terkirim: laporKerusakan.filter((item) => item.status === "terkirim")
+            .length,
+          selesai: laporKerusakan.filter((item) => item.status === "selesai")
             .length,
         },
         bantuan: {
           total: bantuan.length,
-          pending: bantuan.filter((item) => item.status === "pending").length,
+          terkirim: bantuan.filter((item) => item.status === "terkirim").length,
+          selesai: bantuan.filter((item) => item.status === "selesai").length,
         },
       };
     } catch (error) {
