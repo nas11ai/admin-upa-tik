@@ -42,6 +42,8 @@ export interface FormPengaduan {
   layanan: string;
   status: string;
   userEmail: string;
+  timestamp?: any; // Added for compatibility
+  tanggalPengajuan?: any; // Keep for backward compatibility
 }
 
 export interface FormPemeliharaan {
@@ -100,11 +102,7 @@ class FirestoreService {
   // Get all data from a collection
   async getCollection<T>(collectionName: string): Promise<T[]> {
     try {
-      const q = query(
-        collection(db, collectionName),
-        orderBy("tanggalPengajuan", "desc")
-      );
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(collection(db, collectionName));
       return snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -253,10 +251,22 @@ class FirestoreService {
     collectionName: string,
     callback: (data: T[]) => void
   ): () => void {
-    const q = query(
-      collection(db, collectionName),
-      orderBy("tanggalPengajuan", "desc")
-    );
+    // Try different field names for ordering
+    let q;
+
+    try {
+      q = query(
+        collection(db, collectionName),
+        orderBy("tanggalPengajuan", "desc")
+      );
+    } catch (error) {
+      try {
+        q = query(collection(db, collectionName), orderBy("timestamp", "desc"));
+      } catch (error) {
+        // Fallback: no ordering
+        q = collection(db, collectionName);
+      }
+    }
 
     return onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
@@ -272,11 +282,37 @@ class FirestoreService {
     if (!date) return "-";
 
     try {
+      // Handle Firestore Timestamp
       if (date.toDate) {
         return date.toDate().toLocaleDateString("id-ID");
       }
+
+      // Handle string timestamps like "26/05/2025 09:42"
+      if (typeof date === "string") {
+        // Check if it's already in DD/MM/YYYY format
+        if (date.includes("/") && date.length >= 10) {
+          return date.split(" ")[0]; // Return just the date part
+        }
+
+        // Try to parse as regular date string
+        const parsedDate = new Date(date);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate.toLocaleDateString("id-ID");
+        }
+
+        // Return as is if it looks like a date
+        return date;
+      }
+
+      // Handle regular Date object
+      if (date instanceof Date) {
+        return date.toLocaleDateString("id-ID");
+      }
+
+      // Try to create Date from timestamp
       return new Date(date).toLocaleDateString("id-ID");
-    } catch {
+    } catch (error) {
+      console.log("Date parsing error:", error);
       return date.toString();
     }
   }
