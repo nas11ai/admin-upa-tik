@@ -118,18 +118,6 @@
 
           <!-- Header Actions -->
           <div class="flex items-center space-x-4">
-            <!-- Notifications -->
-            <button
-              class="relative p-2 rounded-full hover:bg-neutral-100 text-neutral-600"
-            >
-              <Bell class="h-5 w-5" />
-              <span
-                class="absolute -top-1 -right-1 h-4 w-4 bg-error-500 rounded-full flex items-center justify-center"
-              >
-                <span class="text-xs font-bold text-white">3</span>
-              </span>
-            </button>
-
             <!-- User Menu -->
             <div class="relative" ref="userMenuRef">
               <button
@@ -253,7 +241,6 @@ import {
   X,
   Menu,
   User,
-  Bell,
   ChevronDown,
   Settings,
   LogOut,
