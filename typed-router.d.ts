@@ -23,6 +23,7 @@ declare module 'vue-router/auto-routes' {
     '/lapor-kerusakan': RouteRecordInfo<'/lapor-kerusakan', '/lapor-kerusakan', Record<never, never>, Record<never, never>>,
     '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
     '/pemasangan': RouteRecordInfo<'/pemasangan', '/pemasangan', Record<never, never>, Record<never, never>>,
+    '/pembuatan': RouteRecordInfo<'/pembuatan', '/pembuatan', Record<never, never>, Record<never, never>>,
     '/peminjaman': RouteRecordInfo<'/peminjaman', '/peminjaman', Record<never, never>, Record<never, never>>,
     '/pengaduan': RouteRecordInfo<'/pengaduan', '/pengaduan', Record<never, never>, Record<never, never>>,
     '/unauthorized': RouteRecordInfo<'/unauthorized', '/unauthorized', Record<never, never>, Record<never, never>>,
