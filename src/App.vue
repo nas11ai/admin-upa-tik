@@ -29,11 +29,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import NavbarLayout from "@/components/layouts/NavbarLayout.vue";
-import LoadingComponent from "@/components/ui/LoadingComponent.vue";
-import { useAuth } from "@/composables/useAuth";
-import { useNotification } from "@/composables/useNotification";
-import NotificationContainer from "@/components/ui/NotificationContainer.vue";
+import NavbarLayout from "./components/layouts/NavbarLayout.vue";
+import LoadingComponent from "./components/ui/LoadingComponent.vue";
+import NotificationContainer from "./components/ui/NotificationContainer.vue";
+import { useAuth } from "./composables/useAuth";
+import { useNotification } from "./composables/useNotification";
 
 // Composables
 const route = useRoute();
@@ -62,13 +62,13 @@ const initializeApp = async () => {
     // Simulate progressive loading for better UX
     loadingProgress.value = 10;
 
-    // Initialize Firebase Auth
+    // Initialize Firebase Auth FIRST and wait for it to complete
     loadingProgress.value = 30;
     await initializeAuth();
 
     loadingProgress.value = 60;
 
-    // Setup router guards
+    // THEN setup router guards after auth is ready
     setupRouterGuards();
 
     loadingProgress.value = 80;
@@ -79,7 +79,7 @@ const initializeApp = async () => {
     loadingProgress.value = 95;
 
     // Small delay for smooth transition
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     loadingProgress.value = 100;
   } catch (error) {
@@ -94,17 +94,55 @@ const initializeApp = async () => {
 };
 
 const setupRouterGuards = () => {
+  let isSetupComplete = false;
+
   router.beforeEach(async (to, _from, next) => {
+    // Wait for auth initialization to complete
+    if (!isSetupComplete) {
+      try {
+        await initializeAuth();
+        isSetupComplete = true;
+      } catch (error) {
+        console.error("Auth initialization failed:", error);
+      }
+    }
+
     // Routes yang tidak memerlukan authentication
     const publicRoutes = ["/login", "/unauthorized"];
 
-    next("/");
+    // Prevent infinite loops by checking if we're already on the target route
+    if (publicRoutes.includes(to.path)) {
+      // Jika sudah login dan admin, redirect ke dashboard (kecuali sudah di dashboard)
+      if (isAuthenticated.value && isAdmin.value && to.path !== "/") {
+        return next("/");
+      } else {
+        return next();
+      }
+    } else {
+      // Routes yang memerlukan authentication dan role admin
+      if (!isAuthenticated.value) {
+        // Belum login, redirect ke login (kecuali sudah di login)
+        if (to.path !== "/login") {
+          return next("/login");
+        }
+        return next();
+      } else if (!isAdmin.value) {
+        // Login tapi bukan admin, redirect ke unauthorized (kecuali sudah di unauthorized)
+        if (to.path !== "/unauthorized") {
+          return next("/unauthorized");
+        }
+        return next();
+      } else {
+        // Admin yang valid
+        return next();
+      }
+    }
   });
 
   // Handle route errors
   router.onError((error) => {
     console.error("Router error:", error);
-    networkError();
+    // Don't show networkError for router issues to avoid confusion
   });
 };
 
@@ -133,10 +171,31 @@ const setupErrorHandlers = () => {
 watch(
   [isAuthenticated, isAdmin],
   ([newAuth, newAdmin], [oldAuth, oldAdmin]) => {
+    // Only react to meaningful changes, not initial setup
+    if (oldAuth === undefined || oldAdmin === undefined) return;
+
+    const currentRoute = router.currentRoute.value.path;
+
     if (oldAuth === true && newAuth === false) {
-      // User logged out
-      router.push("/login");
+      // User logged out - redirect to login if not already there
+      if (currentRoute !== "/login") {
+        router.push("/login");
+      }
+    } else if (newAuth === true && oldAuth === false && newAdmin === true) {
+      // User just logged in and is admin - redirect to dashboard if on public page
+      if (["/login", "/unauthorized"].includes(currentRoute)) {
+        router.push("/");
+      }
+    } else if (newAuth === true && oldAdmin === true && newAdmin === false) {
+      // User role changed from admin to non-admin - redirect to unauthorized if not already there
+      if (currentRoute !== "/unauthorized" && currentRoute !== "/login") {
+        router.push("/unauthorized");
+      }
     }
+  },
+  {
+    // Don't run immediately to avoid conflicts with router guards
+    immediate: false,
   }
 );
 

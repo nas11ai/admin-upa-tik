@@ -167,9 +167,6 @@
                   <div class="text-xs text-neutral-400 mt-1">
                     {{ item.userEmail }}
                   </div>
-                  <div class="text-xs text-neutral-400 mt-1">
-                    {{ formatDate(item.tanggalPengajuan || item.timestamp) }}
-                  </div>
                 </div>
               </td>
 
@@ -470,16 +467,6 @@ const prosesCount = computed(
 const selesaiCount = computed(
   () => data.value.filter((item) => item.status === "selesai").length
 );
-
-const formatDate = (date: string | number | Date) => {
-  // implement your date formatting logic here
-  // for example:
-  return new Intl.DateTimeFormat("id-ID", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(date));
-};
 // Methods
 const getStatusColor = (status: string) => {
   return firestoreService.getStatusColor(status);
