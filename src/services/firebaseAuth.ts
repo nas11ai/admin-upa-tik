@@ -58,35 +58,6 @@ export interface AuditLog {
   error?: string;
 }
 
-export interface InventoryItem {
-  id?: string;
-  name: string;
-  category: string;
-  brand: string;
-  model: string;
-  serialNumber: string;
-  location: string;
-  status: "available" | "in-use" | "maintenance" | "retired";
-  condition: "excellent" | "good" | "fair" | "poor";
-  purchaseDate: FieldValue | Timestamp;
-  purchasePrice: number;
-  warranty: {
-    provider: string;
-    expiry: FieldValue | Timestamp;
-    status: "active" | "expired";
-  };
-  assignedTo?: {
-    userId: string;
-    userName: string;
-    department: string;
-    assignedDate: FieldValue | Timestamp;
-  };
-  createdAt: FieldValue | Timestamp;
-  updatedAt: FieldValue | Timestamp;
-  createdBy: string;
-  updatedBy: string;
-}
-
 class FirebaseAuthService {
   private auth = getAuth(firebaseApp);
   private googleProvider = new GoogleAuthProvider();
