@@ -8,95 +8,13 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
-
-// Types
-export interface Barang {
-  jenis: string;
-  namaBarang: string;
-  tanggalPinjam: string;
-}
-
-export interface FormPeminjaman {
-  id?: string;
-  barangDipinjam: Barang[];
-  harapanAnda: string;
-  judul: string;
-  kontakPenanggungJawab: string;
-  namaPenanggungJawab: string;
-  namaPerangkat: string;
-  rentangTanggal: string;
-  statusPeminjaman: string;
-  tanggalMulai: string;
-  tanggalPengajuan: any;
-  tanggalPengambilan: string;
-  tanggalSelesai: string;
-  tujuanPeminjaman: string;
-  userEmail: string;
-}
-
-export interface FormPengaduan {
-  id?: string;
-  judul: string;
-  keluhan: string;
-  kontak: string;
-  layanan: string;
-  status: string;
-  userEmail: string;
-  timestamp?: any; // Added for compatibility
-  tanggalPengajuan?: any; // Keep for backward compatibility
-}
-
-export interface FormPemeliharaan {
-  id?: string;
-  akun: string;
-  alasan: string;
-  jenis: string;
-  judul: string;
-  layanan: string;
-  status: string;
-  userEmail: string;
-}
-
-export interface FormPembuatan {
-  id?: string;
-  judul: string;
-  kontak: string;
-  layanan: string;
-  namaLayanan: string;
-  status: string;
-  tujuan: string;
-  userEmail: string;
-}
-
-export interface FormPemasangan {
-  id?: string;
-  jenis: string;
-  judul: string;
-  kontak: string;
-  status: string;
-  tujuan: string;
-  userEmail: string;
-}
-
-export interface FormLaporKerusakan {
-  id?: string;
-  judul: string;
-  keterangan: string;
-  kontak: string;
-  namaPerangkat: string;
-  serialNumber: string;
-  status: string;
-  userEmail: string;
-}
-
-export interface FormBantuan {
-  id?: string;
-  judul: string;
-  jumlah: string;
-  kontak: string;
-  status: string;
-  tujuan: string;
-}
+import type { FormPeminjaman } from "@/types/FormPeminjaman";
+import type { FormPengaduan } from "@/types/FormPengaduan";
+import type { FormPemeliharaan } from "@/types/FormPemeliharaan";
+import type { FormPembuatan } from "@/types/FormPembuatan";
+import type { FormPemasangan } from "@/types/FormPemasangan";
+import type { FormLaporKerusakan } from "@/types/FormLaporKerusakan";
+import type { FormBantuan } from "@/types/FormBantuan";
 
 class FirestoreService {
   // Get all data from a collection

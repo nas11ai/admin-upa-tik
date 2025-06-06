@@ -256,7 +256,8 @@ import {
 } from "lucide-vue-next";
 import { useAuth } from "../composables/useAuth";
 import { useNotification } from "../composables/useNotification";
-import { firestoreService, type FormPeminjaman } from "../services/firestore";
+import { firestoreService } from "../services/firestore";
+import type { FormPeminjaman } from "@/types/FormPeminjaman";
 
 // Composables
 const { userDisplayInfo } = useAuth();

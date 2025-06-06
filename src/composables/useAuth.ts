@@ -8,7 +8,8 @@ import {
 import { useCurrentUser } from "vuefire";
 import { router } from "../router";
 import { useNotification } from "@/composables/useNotification";
-import firebaseService, { type UserRole } from "@/services/firebaseAuth";
+import firebaseService from "@/services/firebaseAuth";
+import type { UserRole } from "@/types/UserRole";
 
 export interface AuthState {
   loading: boolean;

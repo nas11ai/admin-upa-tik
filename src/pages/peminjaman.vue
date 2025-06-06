@@ -496,8 +496,9 @@ import {
   Edit,
   X,
 } from "lucide-vue-next";
-import { firestoreService, type FormPeminjaman } from "../services/firestore";
+import { firestoreService } from "../services/firestore";
 import { useNotification } from "../composables/useNotification";
+import type { FormPeminjaman } from "@/types/FormPeminjaman";
 
 // Composables
 const { success, error } = useNotification();

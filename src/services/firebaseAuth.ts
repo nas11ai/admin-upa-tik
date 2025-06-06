@@ -12,9 +12,7 @@ import {
   addDoc,
   serverTimestamp,
   onSnapshot,
-  Timestamp,
   increment,
-  FieldValue,
 } from "firebase/firestore";
 import {
   type User,
@@ -24,39 +22,8 @@ import {
 } from "firebase/auth";
 import { db, firebaseApp } from "../configs/firebase";
 import { getAuth } from "firebase/auth";
-
-// Types
-export interface UserRole {
-  uid: string;
-  email: string;
-  displayName: string;
-  photoURL?: string;
-  role: "admin" | "user" | "viewer";
-  department?: string;
-  createdAt: FieldValue | Timestamp;
-  lastLogin: FieldValue | Timestamp;
-  permissions?: string[];
-  metadata?: {
-    loginCount: number;
-    lastIP?: string;
-    lastUserAgent?: string;
-  };
-}
-
-export interface AuditLog {
-  id?: string;
-  userId: string;
-  userEmail: string;
-  action: string;
-  resource: string;
-  resourceId?: string;
-  details?: Record<string, any>;
-  timestamp: FieldValue | Timestamp;
-  ip?: string;
-  userAgent?: string;
-  success: boolean;
-  error?: string;
-}
+import type { UserRole } from "@/types/UserRole";
+import type { AuditLog } from "@/types/AuditLog";
 
 class FirebaseAuthService {
   private auth = getAuth(firebaseApp);

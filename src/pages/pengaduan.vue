@@ -410,8 +410,9 @@ import {
   Edit,
   X,
 } from "lucide-vue-next";
-import { firestoreService, type FormPengaduan } from "../services/firestore";
+import { firestoreService } from "../services/firestore";
 import { useNotification } from "../composables/useNotification";
+import type { FormPengaduan } from "@/types/FormPengaduan";
 
 // Composables
 const { success, error } = useNotification();
