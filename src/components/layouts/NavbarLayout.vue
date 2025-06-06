@@ -185,26 +185,6 @@
                   </div>
                 </div>
 
-                <router-link
-                  to="/profile"
-                  class="flex items-center px-4 py-2 text-sm text-dashboard-text hover:bg-neutral-50"
-                  @click="closeUserMenu"
-                >
-                  <Settings class="mr-3 h-4 w-4" />
-                  Pengaturan Profil
-                </router-link>
-
-                <router-link
-                  to="/users"
-                  class="flex items-center px-4 py-2 text-sm text-dashboard-text hover:bg-neutral-50"
-                  @click="closeUserMenu"
-                >
-                  <UserCog class="mr-3 h-4 w-4" />
-                  Manajemen User
-                </router-link>
-
-                <hr class="my-1 border-dashboard-border" />
-
                 <button
                   @click="handleLogout"
                   class="flex w-full items-center px-4 py-2 text-sm text-error-600 hover:bg-error-50"
@@ -242,7 +222,6 @@ import {
   Menu,
   User,
   ChevronDown,
-  Settings,
   LogOut,
   Home,
   Package2,
@@ -252,7 +231,6 @@ import {
   Zap,
   AlertTriangle,
   HelpCircle,
-  UserCog,
 } from "lucide-vue-next";
 import { useAuth } from "../../composables/useAuth";
 
