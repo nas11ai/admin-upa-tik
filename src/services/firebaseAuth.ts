@@ -87,7 +87,7 @@ export interface InventoryItem {
   updatedBy: string;
 }
 
-class FirebaseService {
+class FirebaseAuthService {
   private auth = getAuth(firebaseApp);
   private googleProvider = new GoogleAuthProvider();
 
@@ -278,5 +278,5 @@ class FirebaseService {
 }
 
 // Export singleton instance
-export const firebaseService = new FirebaseService();
-export default firebaseService;
+export const firebaseAuthService = new FirebaseAuthService();
+export default firebaseAuthService;
