@@ -36,16 +36,16 @@
             </p>
             <div class="flex items-center mt-2 space-x-2">
               <span
-                v-if="stat.title === 'Peminjaman'"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-100 text-warning-800"
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                :class="
+                  stat.pendingLabel === 'tersedia'
+                    ? 'bg-green-100 text-green-800'
+                    : stat.pendingLabel === 'diajukan'
+                    ? 'bg-warning-100 text-warning-800'
+                    : 'bg-gray-100 text-gray-800'
+                "
               >
-                {{ stat.pending }} diajukan
-              </span>
-              <span
-                v-else
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-              >
-                {{ stat.pending }} terkirim
+                {{ stat.pending }} {{ stat.pendingLabel || "pending" }}
               </span>
             </div>
           </div>
@@ -141,7 +141,7 @@
                   {{ getServiceConfig(item.type).name }} • {{ item.userEmail }}
                 </p>
                 <p class="text-xs text-dashboard-text-light mt-1">
-                  {{ formatDate(item.tanggalPengajuan) }}
+                  {{ formatDate(item.tanggalPengajuan || item.timestamp) }}
                 </p>
               </div>
             </div>
@@ -253,11 +253,11 @@ import {
   Zap,
   AlertTriangle,
   HelpCircle,
+  Package2,
 } from "lucide-vue-next";
 import { useAuth } from "../composables/useAuth";
 import { useNotification } from "../composables/useNotification";
 import { firestoreService } from "../services/firestore";
-import type { FormPeminjaman } from "@/types/FormPeminjaman";
 
 // Composables
 const { userDisplayInfo } = useAuth();
@@ -278,9 +278,16 @@ const currentItem = ref<{
 
 // Service configuration
 const serviceConfigs = {
+  daftar_barang: {
+    name: "Daftar Barang",
+    icon: Package,
+    iconColor: "text-indigo-600",
+    iconBg: "bg-indigo-100",
+    path: "/daftar-barang",
+  },
   form_peminjaman: {
     name: "Peminjaman",
-    icon: Package,
+    icon: Package2,
     iconColor: "text-blue-600",
     iconBg: "bg-blue-100",
     path: "/peminjaman",
@@ -336,12 +343,22 @@ const userDisplayName = computed(
 
 const statsCards = computed(() => [
   {
+    title: "Daftar Barang",
+    total: stats.value.daftarBarang?.total || 0,
+    pending: stats.value.daftarBarang?.tersedia || 0,
+    icon: Package,
+    iconColor: "text-indigo-600",
+    iconBg: "bg-indigo-100",
+    pendingLabel: "tersedia",
+  },
+  {
     title: "Peminjaman",
     total: stats.value.peminjaman?.total || 0,
     pending: stats.value.peminjaman?.diajukan || 0,
-    icon: Package,
+    icon: Package2,
     iconColor: "text-blue-600",
     iconBg: "bg-blue-100",
+    pendingLabel: "diajukan",
   },
   {
     title: "Pengaduan",
@@ -350,6 +367,7 @@ const statsCards = computed(() => [
     icon: MessageSquare,
     iconColor: "text-red-600",
     iconBg: "bg-red-100",
+    pendingLabel: "terkirim",
   },
   {
     title: "Pemeliharaan",
@@ -358,6 +376,7 @@ const statsCards = computed(() => [
     icon: Wrench,
     iconColor: "text-green-600",
     iconBg: "bg-green-100",
+    pendingLabel: "terkirim",
   },
   {
     title: "Lainnya",
@@ -374,6 +393,7 @@ const statsCards = computed(() => [
     icon: HelpCircle,
     iconColor: "text-neutral-600",
     iconBg: "bg-neutral-100",
+    pendingLabel: "terkirim",
   },
 ]);
 
@@ -395,14 +415,6 @@ const getServiceConfig = (type: string) => {
 const formatDate = (date: any) => {
   return firestoreService.formatDate(date);
 };
-
-type SubmissionWithTanggalPengajuan = FormPeminjaman & { type: string };
-
-function hasTanggalPengajuan(
-  submission: any
-): submission is SubmissionWithTanggalPengajuan {
-  return "tanggalPengajuan" in submission && !!submission.tanggalPengajuan;
-}
 
 const loadDashboardData = async () => {
   try {
@@ -446,12 +458,18 @@ const loadDashboardData = async () => {
 
     // Sort by date and take latest 10
     recentSubmissions.value = allSubmissions
-      .filter(hasTanggalPengajuan)
       .sort((a, b) => {
-        const dateA =
-          a.tanggalPengajuan?.toDate?.() || new Date(a.tanggalPengajuan);
-        const dateB =
-          b.tanggalPengajuan?.toDate?.() || new Date(b.tanggalPengajuan);
+        const getDate = (item: any) => {
+          if (item.tanggalPengajuan?.toDate)
+            return item.tanggalPengajuan.toDate();
+          if (item.timestamp) return new Date(item.timestamp);
+          if (item.tanggalPengajuan) return new Date(item.tanggalPengajuan);
+          return new Date(); // fallback
+        };
+
+        const dateA = getDate(a);
+        const dateB = getDate(b);
+
         return dateB.getTime() - dateA.getTime();
       })
       .slice(0, 10);
