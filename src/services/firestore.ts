@@ -15,6 +15,7 @@ import type { FormPembuatan } from "@/types/FormPembuatan";
 import type { FormPemasangan } from "@/types/FormPemasangan";
 import type { FormLaporKerusakan } from "@/types/FormLaporKerusakan";
 import type { FormBantuan } from "@/types/FormBantuan";
+import type { DaftarBarang } from "@/types/DaftarBarang";
 
 class FirestoreService {
   // Get all data from a collection
@@ -79,6 +80,10 @@ class FirestoreService {
     return this.getCollection<FormBantuan>("form_bantuan");
   }
 
+  async getDaftarBarang(): Promise<DaftarBarang[]> {
+    return this.getCollection<DaftarBarang>("daftar_barang");
+  }
+
   // Get dashboard stats
   async getDashboardStats() {
     try {
@@ -90,6 +95,7 @@ class FirestoreService {
         pemasangan,
         laporKerusakan,
         bantuan,
+        daftarBarang,
       ] = await Promise.all([
         this.getPeminjaman(),
         this.getPengaduan(),
@@ -98,6 +104,7 @@ class FirestoreService {
         this.getPemasangan(),
         this.getLaporKerusakan(),
         this.getBantuan(),
+        this.getDaftarBarang(),
       ]);
 
       return {
@@ -156,6 +163,13 @@ class FirestoreService {
           total: bantuan.length,
           terkirim: bantuan.filter((item) => item.status === "terkirim").length,
           selesai: bantuan.filter((item) => item.status === "selesai").length,
+        },
+        daftarBarang: {
+          total: daftarBarang.length,
+          tersedia: daftarBarang.filter((item) => item.status === "tersedia")
+            .length,
+          dipinjam: daftarBarang.filter((item) => item.status === "dipinjam")
+            .length,
         },
       };
     } catch (error) {
