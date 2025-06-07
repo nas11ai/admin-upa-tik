@@ -237,6 +237,7 @@ import { useAuth } from "../../composables/useAuth";
 // Navigation items
 const navigationItems = [
   { name: "Dashboard", path: "/", icon: Home },
+  { name: "Daftar Barang", path: "/daftar-barang", icon: Package },
   { name: "Peminjaman", path: "/peminjaman", icon: Package2 },
   { name: "Pengaduan", path: "/pengaduan", icon: MessageSquare },
   { name: "Pemeliharaan", path: "/pemeliharaan", icon: Wrench },
