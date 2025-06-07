@@ -6,6 +6,8 @@ import {
   query,
   orderBy,
   onSnapshot,
+  setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
 import type { FormPeminjaman } from "@/types/FormPeminjaman";
@@ -82,6 +84,50 @@ class FirestoreService {
 
   async getDaftarBarang(): Promise<DaftarBarang[]> {
     return this.getCollection<DaftarBarang>("daftar_barang");
+  }
+
+  async createDaftarBarang(barang: DaftarBarang): Promise<void> {
+    if (!barang.serial_number) {
+      throw new Error("serial_number diperlukan sebagai ID dokumen.");
+    }
+
+    try {
+      const docRef = doc(db, "daftar_barang", barang.serial_number);
+      await setDoc(docRef, {
+        ...barang,
+        tanggal_masuk: barang.tanggal_masuk || new Date(),
+        status: barang.status || "tersedia",
+      });
+    } catch (error) {
+      console.error("Gagal menambahkan barang:", error);
+      throw error;
+    }
+  }
+
+  async updateDaftarBarang(
+    serial_number: string,
+    data: Partial<DaftarBarang>
+  ): Promise<void> {
+    try {
+      const docRef = doc(db, "daftar_barang", serial_number);
+      await updateDoc(docRef, {
+        ...data,
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      console.error("Gagal mengupdate barang:", error);
+      throw error;
+    }
+  }
+
+  async deleteDaftarBarang(serial_number: string): Promise<void> {
+    try {
+      const docRef = doc(db, "daftar_barang", serial_number);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("Gagal menghapus barang:", error);
+      throw error;
+    }
   }
 
   // Get dashboard stats
