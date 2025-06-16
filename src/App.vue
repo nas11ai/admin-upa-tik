@@ -20,9 +20,6 @@
       <!-- Halaman tanpa layout (login, dll) -->
       <router-view v-else />
     </div>
-
-    <!-- Notification Container -->
-    <NotificationContainer />
   </div>
 </template>
 
@@ -31,15 +28,12 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import NavbarLayout from "./components/layouts/NavbarLayout.vue";
 import LoadingComponent from "./components/ui/LoadingComponent.vue";
-import NotificationContainer from "./components/ui/NotificationContainer.vue";
 import { useAuth } from "./composables/useAuth";
-import { useNotification } from "./composables/useNotification";
 
 // Composables
 const route = useRoute();
 const router = useRouter();
 const { isAuthenticated, isAdmin, initializeAuth } = useAuth();
-const { networkError } = useNotification();
 
 // State
 const isInitializing = ref(true);
@@ -84,7 +78,6 @@ const initializeApp = async () => {
     loadingProgress.value = 100;
   } catch (error) {
     console.error("App initialization error:", error);
-    networkError();
   } finally {
     // Delay to show 100% progress
     setTimeout(() => {
@@ -150,15 +143,6 @@ const setupErrorHandlers = () => {
   // Global error handler untuk unhandled promises
   window.addEventListener("unhandledrejection", (event) => {
     console.error("Unhandled promise rejection:", event.reason);
-
-    // Check if it's a network error
-    if (
-      event.reason?.code === "auth/network-request-failed" ||
-      event.reason?.message?.includes("network") ||
-      event.reason?.message?.includes("fetch")
-    ) {
-      networkError();
-    }
   });
 
   // Global error handler untuk JavaScript errors

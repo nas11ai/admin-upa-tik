@@ -7,7 +7,6 @@ import {
 } from "firebase/auth";
 import { useCurrentUser } from "vuefire";
 import { router } from "../router";
-import { useNotification } from "@/composables/useNotification";
 import firebaseService from "@/services/firebaseAuth";
 import type { UserRole } from "@/types/UserRole";
 
@@ -20,8 +19,6 @@ export interface AuthState {
 export const useAuth = () => {
   const auth = getAuth();
   const user = useCurrentUser();
-  const { authSuccess, authError, roleError, updateSuccess } =
-    useNotification();
 
   const authState = ref<AuthState>({
     loading: false,
@@ -65,8 +62,7 @@ export const useAuth = () => {
       authState.value.error = null;
       clearError();
 
-      const { user: firebaseUser, isNewUser } =
-        await firebaseService.signInWithGoogle();
+      const { user: firebaseUser } = await firebaseService.signInWithGoogle();
 
       if (firebaseUser) {
         console.log("firebaseUser:", firebaseUser);
@@ -84,7 +80,6 @@ export const useAuth = () => {
         // Check if user is admin and active
         if (roleData.role !== "admin") {
           await firebaseSignOut(auth);
-          roleError(roleData.role);
           throw new Error(
             `Akses ditolak. Hanya admin yang dapat mengakses sistem ini. Role Anda: ${roleData.role}`
           );
@@ -92,13 +87,6 @@ export const useAuth = () => {
 
         // Setup real-time user data listener
         setupUserListener(firebaseUser.uid);
-
-        // Success - show notification and redirect
-        const welcomeMessage = isNewUser
-          ? "Selamat datang! Akun Anda telah dibuat."
-          : `Selamat datang kembali, ${roleData.displayName}!`;
-
-        authSuccess(welcomeMessage);
 
         // Small delay for better UX
         setTimeout(() => {
@@ -124,7 +112,6 @@ export const useAuth = () => {
         authState.value.error = error.message;
       } else {
         authState.value.error = "Terjadi kesalahan saat login dengan Google";
-        authError(authState.value.error);
       }
 
       return { success: false, error: authState.value.error };
@@ -185,7 +172,6 @@ export const useAuth = () => {
 
           // Check for role or status changes
           if (oldRole && oldRole !== updatedUser.role) {
-            updateSuccess("Role Anda telah diperbarui");
             // If role changed from admin to non-admin, redirect
             if (oldRole === "admin" && updatedUser.role !== "admin") {
               router.push("/unauthorized");

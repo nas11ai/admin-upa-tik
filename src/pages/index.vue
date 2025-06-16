@@ -256,12 +256,10 @@ import {
   Package2,
 } from "lucide-vue-next";
 import { useAuth } from "../composables/useAuth";
-import { useNotification } from "../composables/useNotification";
 import { firestoreService } from "../services/firestore";
 
 // Composables
 const { userDisplayInfo } = useAuth();
-const { success, error } = useNotification();
 
 // State
 const loading = ref(false);
@@ -475,7 +473,6 @@ const loadDashboardData = async () => {
       .slice(0, 10);
   } catch (err) {
     console.error("Error loading dashboard data:", err);
-    error("Gagal memuat data dashboard");
   } finally {
     loading.value = false;
   }
@@ -509,12 +506,10 @@ const confirmUpdateStatus = async () => {
       selectedStatus.value
     );
 
-    success("Status berhasil diperbarui");
     closeStatusModal();
     loadDashboardData(); // Refresh data
   } catch (err) {
     console.error("Error updating status:", err);
-    error("Gagal memperbarui status");
   } finally {
     updating.value = false;
   }

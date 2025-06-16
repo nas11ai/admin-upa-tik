@@ -613,11 +613,7 @@ import {
 } from "lucide-vue-next";
 import { Timestamp } from "firebase/firestore";
 import { firestoreService } from "../services/firestore";
-import { useNotification } from "../composables/useNotification";
 import type { DaftarBarang } from "@/types/DaftarBarang";
-
-// Composables
-const { success, error } = useNotification();
 
 // State
 const loading = ref(false);
@@ -703,7 +699,6 @@ const loadData = async () => {
     data.value = await firestoreService.getDaftarBarang();
   } catch (err) {
     console.error("Error loading daftar barang:", err);
-    error("Gagal memuat data barang");
   } finally {
     loading.value = false;
   }
@@ -801,17 +796,14 @@ const submitForm = async () => {
         selectedItem.value.serial_number,
         submitData
       );
-      success("Barang berhasil diperbarui");
     } else {
       await firestoreService.createDaftarBarang(submitData);
-      success("Barang berhasil ditambahkan");
     }
 
     closeFormModal();
     loadData();
   } catch (err) {
     console.error("Error submitting form:", err);
-    error(err instanceof Error ? err.message : "Gagal menyimpan data");
   } finally {
     submitting.value = false;
   }
@@ -823,12 +815,10 @@ const confirmDelete = async () => {
   try {
     deleting.value = true;
     await firestoreService.deleteDaftarBarang(selectedItem.value.serial_number);
-    success("Barang berhasil dihapus");
     closeDeleteModal();
     loadData();
   } catch (err) {
     console.error("Error deleting item:", err);
-    error("Gagal menghapus barang");
   } finally {
     deleting.value = false;
   }

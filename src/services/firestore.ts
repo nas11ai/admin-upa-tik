@@ -8,8 +8,10 @@ import {
   onSnapshot,
   setDoc,
   deleteDoc,
+  addDoc,
 } from "firebase/firestore";
-import { db } from "../configs/firebase";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { db, firebaseApp } from "../configs/firebase";
 import type { FormPeminjaman } from "@/types/FormPeminjaman";
 import type { FormPengaduan } from "@/types/FormPengaduan";
 import type { FormPemeliharaan } from "@/types/FormPemeliharaan";
@@ -19,7 +21,180 @@ import type { FormLaporKerusakan } from "@/types/FormLaporKerusakan";
 import type { FormBantuan } from "@/types/FormBantuan";
 import type { DaftarBarang } from "@/types/DaftarBarang";
 
+interface NotificationData {
+  id?: string;
+  title: string;
+  body: string;
+  type: "status_update" | "new_entry";
+  collectionName: string;
+  documentId: string;
+  timestamp: Date;
+  read: boolean;
+  userEmail?: string;
+}
+
 class FirestoreService {
+  private messaging: any;
+  private notificationCallbacks: Set<(notification: NotificationData) => void> =
+    new Set();
+
+  constructor() {
+    this.initializeMessaging();
+  }
+  // Initialize Firebase Cloud Messaging
+  private async initializeMessaging() {
+    try {
+      this.messaging = getMessaging(firebaseApp);
+
+      // Listen for foreground messages
+      onMessage(this.messaging, (payload) => {
+        console.log("Message received in foreground: ", payload);
+        this.handleForegroundMessage(payload);
+      });
+    } catch (error) {
+      console.error("Error initializing messaging:", error);
+    }
+  }
+
+  // Request notification permission and get FCM token
+  async requestNotificationPermission(): Promise<string | null> {
+    try {
+      const permission = await Notification.requestPermission();
+
+      if (permission === "granted") {
+        const token = await getToken(this.messaging, {
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY, // Add this to your .env
+        });
+        console.log("FCM Token:", token);
+        return token;
+      } else {
+        console.log("Notification permission denied");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error getting notification permission:", error);
+      return null;
+    }
+  }
+
+  // Handle foreground messages
+  private handleForegroundMessage(payload: any) {
+    const notification: NotificationData = {
+      title: payload.notification?.title || "New Notification",
+      body: payload.notification?.body || "You have a new update",
+      type: payload.data?.type || "status_update",
+      collectionName: payload.data?.collectionName || "",
+      documentId: payload.data?.documentId || "",
+      timestamp: new Date(),
+      read: false,
+      userEmail: payload.data?.userEmail,
+    };
+
+    // Show browser notification
+    this.showBrowserNotification(notification);
+
+    // Store in Firestore
+    this.storeNotification(notification);
+
+    // Notify all registered callbacks
+    this.notificationCallbacks.forEach((callback) => callback(notification));
+  }
+
+  // Show browser notification
+  private showBrowserNotification(notification: NotificationData) {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification(notification.title, {
+        body: notification.body,
+        icon: "/favicon.ico", // Add your app icon
+        badge: "/badge-icon.png", // Add badge icon
+        tag: notification.documentId, // Prevent duplicate notifications
+        requireInteraction: true,
+      });
+    }
+  }
+
+  // Store notification in Firestore
+  private async storeNotification(notification: NotificationData) {
+    try {
+      await addDoc(collection(db, "notifications"), {
+        ...notification,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error storing notification:", error);
+    }
+  }
+
+  // Subscribe to notification updates
+  subscribeToNotifications(
+    callback: (notification: NotificationData) => void
+  ): () => void {
+    this.notificationCallbacks.add(callback);
+
+    return () => {
+      this.notificationCallbacks.delete(callback);
+    };
+  }
+
+  // Get notifications for a user
+  async getNotifications(userEmail?: string): Promise<NotificationData[]> {
+    try {
+      const q = userEmail
+        ? query(collection(db, "notifications"), orderBy("timestamp", "desc"))
+        : query(collection(db, "notifications"), orderBy("timestamp", "desc"));
+
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as NotificationData[];
+    } catch (error) {
+      console.error("Error getting notifications:", error);
+      return [];
+    }
+  }
+
+  // Mark notification as read
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    try {
+      const docRef = doc(db, "notifications", notificationId);
+      await updateDoc(docRef, {
+        read: true,
+        readAt: new Date(),
+      });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  }
+
+  // Send notification (this would typically be called from your backend)
+  private async sendNotification(
+    title: string,
+    body: string,
+    type: "status_update" | "new_entry",
+    collectionName: string,
+    documentId: string,
+    userEmail?: string
+  ) {
+    const notification: NotificationData = {
+      title,
+      body,
+      type,
+      collectionName,
+      documentId,
+      timestamp: new Date(),
+      read: false,
+      userEmail,
+    };
+
+    // Store notification
+    await this.storeNotification(notification);
+
+    // If you have a backend service, you would call it here to send FCM messages
+    // For now, we'll just trigger local notifications
+    this.notificationCallbacks.forEach((callback) => callback(notification));
+  }
+
   // Get all data from a collection
   async getCollection<T>(collectionName: string): Promise<T[]> {
     try {
@@ -34,11 +209,26 @@ class FirestoreService {
     }
   }
 
+  // Get display name for collection
+  private getCollectionDisplayName(collectionName: string): string {
+    const displayNames: { [key: string]: string } = {
+      form_peminjaman: "Peminjaman",
+      form_pengaduan: "Pengaduan",
+      form_pemeliharaan: "Pemeliharaan",
+      form_pembuatan: "Pembuatan",
+      form_pemasangan: "Pemasangan",
+      form_lapor_kerusakan: "Laporan Kerusakan",
+      form_bantuan: "Bantuan",
+    };
+    return displayNames[collectionName] || collectionName;
+  }
+
   // Update status
   async updateStatus(
     collectionName: string,
     docId: string,
-    newStatus: string
+    newStatus: string,
+    userEmail?: string
   ): Promise<void> {
     try {
       const docRef = doc(db, collectionName, docId);
@@ -47,6 +237,21 @@ class FirestoreService {
         statusPeminjaman: newStatus, // untuk form_peminjaman
         updatedAt: new Date(),
       });
+
+      // Send notification for status update
+      const title = this.getCollectionDisplayName(collectionName);
+      const body = `Status ${title.toLowerCase()} telah diubah menjadi: ${this.getStatusLabel(
+        newStatus
+      )}`;
+
+      await this.sendNotification(
+        `${title} - Update Status`,
+        body,
+        "status_update",
+        collectionName,
+        docId,
+        userEmail
+      );
     } catch (error) {
       console.error(`Error updating status:`, error);
       throw error;
@@ -86,6 +291,7 @@ class FirestoreService {
     return this.getCollection<DaftarBarang>("daftar_barang");
   }
 
+  // Enhanced create daftar barang (no notification for barang as requested)
   async createDaftarBarang(barang: DaftarBarang): Promise<void> {
     if (!barang.serial_number) {
       throw new Error("serial_number diperlukan sebagai ID dokumen.");
@@ -128,6 +334,86 @@ class FirestoreService {
       console.error("Gagal menghapus barang:", error);
       throw error;
     }
+  }
+
+  // Enhanced real-time listener with notifications
+  subscribeToCollection<T>(
+    collectionName: string,
+    callback: (data: T[]) => void,
+    enableNotifications: boolean = true
+  ): () => void {
+    let q;
+    let isFirstLoad = true;
+    let previousDataMap = new Map<string, any>();
+
+    try {
+      q = query(
+        collection(db, collectionName),
+        orderBy("tanggalPengajuan", "desc")
+      );
+    } catch (error) {
+      try {
+        q = query(collection(db, collectionName), orderBy("timestamp", "desc"));
+      } catch (error) {
+        q = collection(db, collectionName);
+      }
+    }
+
+    return onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as T[];
+
+      callback(data);
+
+      // Handle notifications for changes (skip barang collection)
+      if (enableNotifications && collectionName !== "daftar_barang") {
+        snapshot.docChanges().forEach((change) => {
+          const docData = { id: change.doc.id, ...change.doc.data() } as any;
+
+          if (change.type === "added" && !isFirstLoad) {
+            // New document added
+            const title = this.getCollectionDisplayName(collectionName);
+            this.sendNotification(
+              `${title} Baru`,
+              `${title} baru telah ditambahkan: ${
+                docData.judul || docData.namaBarang || "Item baru"
+              }`,
+              "new_entry",
+              collectionName,
+              change.doc.id,
+              docData.userEmail
+            );
+          } else if (change.type === "modified" && !isFirstLoad) {
+            // Document modified - check if status changed
+            const previousData = previousDataMap.get(change.doc.id);
+            const currentStatus = docData.status || docData.statusPeminjaman;
+            const previousStatus =
+              previousData?.status || previousData?.statusPeminjaman;
+
+            if (previousStatus && currentStatus !== previousStatus) {
+              const title = this.getCollectionDisplayName(collectionName);
+              this.sendNotification(
+                `${title} - Update Status`,
+                `Status telah diubah dari "${this.getStatusLabel(
+                  previousStatus
+                )}" menjadi "${this.getStatusLabel(currentStatus)}"`,
+                "status_update",
+                collectionName,
+                change.doc.id,
+                docData.userEmail
+              );
+            }
+          }
+
+          // Update previous data map
+          previousDataMap.set(change.doc.id, docData);
+        });
+
+        isFirstLoad = false;
+      }
+    });
   }
 
   // Get dashboard stats
@@ -222,37 +508,6 @@ class FirestoreService {
       console.error("Error getting dashboard stats:", error);
       throw error;
     }
-  }
-
-  // Real-time listener for a collection
-  subscribeToCollection<T>(
-    collectionName: string,
-    callback: (data: T[]) => void
-  ): () => void {
-    // Try different field names for ordering
-    let q;
-
-    try {
-      q = query(
-        collection(db, collectionName),
-        orderBy("tanggalPengajuan", "desc")
-      );
-    } catch (error) {
-      try {
-        q = query(collection(db, collectionName), orderBy("timestamp", "desc"));
-      } catch (error) {
-        // Fallback: no ordering
-        q = collection(db, collectionName);
-      }
-    }
-
-    return onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as T[];
-      callback(data);
-    });
   }
 
   // Format date helper

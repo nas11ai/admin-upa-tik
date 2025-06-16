@@ -305,7 +305,6 @@ import {
   X,
 } from "lucide-vue-next";
 import { firestoreService } from "../services/firestore";
-import { useNotification } from "../composables/useNotification";
 
 // Props
 interface Props {
@@ -327,9 +326,6 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-
-// Composables
-const { success, error } = useNotification();
 
 // State
 const loading = ref(false);
@@ -396,7 +392,6 @@ const loadData = async () => {
     data.value = await props.loadDataFunction();
   } catch (err) {
     console.error(`Error loading ${props.collectionName} data:`, err);
-    error(`Gagal memuat data ${props.title.toLowerCase()}`);
   } finally {
     loading.value = false;
   }
@@ -432,12 +427,10 @@ const confirmStatusUpdate = async () => {
       newStatus.value
     );
 
-    success("Status berhasil diperbarui");
     closeStatusUpdate();
     loadData();
   } catch (err) {
     console.error("Error updating status:", err);
-    error("Gagal memperbarui status");
   } finally {
     updating.value = false;
   }

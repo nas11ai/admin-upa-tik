@@ -411,11 +411,7 @@ import {
   X,
 } from "lucide-vue-next";
 import { firestoreService } from "../services/firestore";
-import { useNotification } from "../composables/useNotification";
 import type { FormPengaduan } from "@/types/FormPengaduan";
-
-// Composables
-const { success, error } = useNotification();
 
 // State
 const loading = ref(false);
@@ -483,7 +479,6 @@ const loadData = async () => {
     data.value = await firestoreService.getPengaduan();
   } catch (err) {
     console.error("Error loading pengaduan data:", err);
-    error("Gagal memuat data pengaduan");
   } finally {
     loading.value = false;
   }
@@ -519,12 +514,10 @@ const confirmStatusUpdate = async () => {
       newStatus.value
     );
 
-    success("Status berhasil diperbarui");
     closeStatusUpdate();
     loadData();
   } catch (err) {
     console.error("Error updating status:", err);
-    error("Gagal memperbarui status");
   } finally {
     updating.value = false;
   }
