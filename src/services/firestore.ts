@@ -87,7 +87,7 @@ class FirestoreService {
       documentId: payload.data?.documentId || "",
       timestamp: new Date(),
       read: false,
-      userEmail: payload.data?.userEmail,
+      userEmail: payload.data?.userEmail || "admin@example.com",
     };
 
     // Show browser notification
@@ -116,6 +116,10 @@ class FirestoreService {
   // Store notification in Firestore
   private async storeNotification(notification: NotificationData) {
     try {
+      if (!notification.userEmail) {
+        notification.userEmail = "admin@example.com";
+      }
+
       await addDoc(collection(db, "notifications"), {
         ...notification,
         timestamp: new Date(),
